@@ -1,0 +1,7 @@
+# dsh-session-delete bundle patch
+#
+# Mounts the Host half of the plugin. The Client half is discovered from the
+# package's `dsh.client` manifest and rendered by the Web UI.
+- insert:
+    - id: session-delete
+      name: 'dsh-session-delete'

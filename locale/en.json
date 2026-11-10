@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session Delete",
+    "description": "Permanently delete a session from its \"...\" menu: stop running work, remove the entry, and clean up the session log on disk."
+  }
+}
