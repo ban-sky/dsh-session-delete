@@ -425,38 +425,46 @@ window.__ModuleLoader__.load({
       const registerNativeMenu = (child) => {
         const slots = child.get('slots')
         const contextMenus = child.get('contextMenus')
-        if (slots === undefined || contextMenus === undefined) return
-        child.effect(
-          () =>
-            slots.inject(CONTEXT_ICON_SLOT, function* () {
-              yield slots.register({ name: CONTEXT_ICON_SLOT, key: ICON_KEY }, TrashIcon)
-            }),
-          'session-delete: menu icon',
-        )
-        child.effect(
-          () =>
-            contextMenus.register({
-              id: NATIVE_MENU_ID,
-              target: 'session',
-              order: NATIVE_MENU_ORDER,
-              resolve: (target) => [
-                {
-                  id: 'delete',
-                  label: t('menu.deleteSession'),
-                  icon: { key: ICON_KEY },
-                  danger: true,
-                  separatorBefore: true,
-                  afterContent: true,
-                  run: () =>
-                    openConfirm({
-                      sessionId: target.sessionId,
-                      displayTitle: target.displayTitle,
-                    }),
-                },
-              ],
-            }),
-          'session-delete: session menu action',
-        )
+        if (typeof slots?.inject !== 'function' || typeof contextMenus?.register !== 'function') {
+          return false
+        }
+        try {
+          child.effect(
+            () =>
+              slots.inject(CONTEXT_ICON_SLOT, function* () {
+                yield slots.register({ name: CONTEXT_ICON_SLOT, key: ICON_KEY }, TrashIcon)
+              }),
+            'session-delete: menu icon',
+          )
+          child.effect(
+            () =>
+              contextMenus.register({
+                id: NATIVE_MENU_ID,
+                target: 'session',
+                order: NATIVE_MENU_ORDER,
+                resolve: (target) => [
+                  {
+                    id: 'delete',
+                    label: t('menu.deleteSession'),
+                    icon: { key: ICON_KEY },
+                    danger: true,
+                    separatorBefore: true,
+                    afterContent: true,
+                    run: () =>
+                      openConfirm({
+                        sessionId: target.sessionId,
+                        displayTitle: target.displayTitle,
+                      }),
+                  },
+                ],
+              }),
+            'session-delete: session menu action',
+          )
+          return true
+        } catch (error) {
+          console.warn('[session-delete] native context-menu registration failed', error)
+          return false
+        }
       }
 
       const disposeFallbackRow = ctx.slots.inject(MENU_SLOT, () =>
@@ -475,8 +483,7 @@ window.__ModuleLoader__.load({
 
       // On 0.2.1 this service never appears and the legacy slot row stays.
       ctx.inject(['contextMenus'], (child) => {
-        withdrawFallbackRow()
-        registerNativeMenu(child)
+        if (registerNativeMenu(child)) withdrawFallbackRow()
       })
 
       ctx.slots.inject(OVERLAY_SLOT, () =>
