@@ -17,6 +17,20 @@ plugin removes the Session for real:
 Nothing outside the Session’s own directory is touched, and the Host refuses
 any path that is not exactly `<root>/<project>/<session-id>`.
 
+## Compatibility
+
+The plugin adapts to the DSH version it runs on:
+
+- **DSH 0.2.2 and newer** — registers a native Session context-menu action
+  (`ctx.contextMenus`, order `700`, `danger: true`), so it appears after
+  rename / fork / copy id / **archive (600)** and uses the shipped menu styling
+  and icon slot.
+- **DSH 0.2.1 and older** — falls back to the legacy
+  `sidebar.workspaces.session.menu.item` slot row (order `500`, red).
+
+The two paths are mutually exclusive: the legacy row is withdrawn as soon as
+`contextMenus` is available, so the action never appears twice.
+
 ## How the Client reaches the Host
 
 The confirmation dialog calls a document-relative HTTP route:
@@ -50,17 +64,17 @@ Source and releases: <https://github.com/ban-sky/dsh-session-delete>
 
 ### On another device from the packaged tarball
 
-The release artifact is `dsh-session-delete-1.0.0.tgz`. Copy it to the target
+The release artifact is `dsh-session-delete-1.1.0.tgz`. Copy it to the target
 device (a stable path, e.g. `/data/dsh/plugins/`), then run on that device:
 
 ```bash
-dsh plugin --profile web add /data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+dsh plugin --profile web add /data/dsh/plugins/dsh-session-delete-1.1.0.tgz
 ```
 
 or, from a DSH agent on that device:
 
 ```text
-plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.1.0.tgz
 ```
 
 Both add the package to the profile, append `dsh-session-delete` to
@@ -76,13 +90,13 @@ recreations.
 Download the same tarball straight from GitHub:
 
 ```text
-https://github.com/ban-sky/dsh-session-delete/raw/main/dist/dsh-session-delete-1.0.0.tgz
+https://github.com/ban-sky/dsh-session-delete/raw/main/dist/dsh-session-delete-1.1.0.tgz
 ```
 
 Verify it with the published checksum:
 
 ```bash
-sha256sum -c dsh-session-delete-1.0.0.tgz.sha256
+sha256sum -c dsh-session-delete-1.1.0.tgz.sha256
 ```
 
 ### From the GitHub repository (clone install)
@@ -119,11 +133,27 @@ the new tarball, then restart:
 
 ```text
 plugin_manager action=remove_bundle target=dsh-session-delete
-plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.1.0.tgz
 ```
 
 (Or `dsh plugin --profile web remove dsh-session-delete` followed by the `add`
 command above.)
+
+## DSHgo and mobile WebViews
+
+DSHgo renders the same DSH Web UI inside its Android WebView, so the plugin
+needs no phone-side code: install it on the **PC side** (the `dsh web` instance
+DSHgo connects to) exactly as below, then reload the page in the app.
+
+The dialog is tuned for narrow screens:
+
+- On viewports `<= 759px` it becomes a bottom sheet with safe-area padding
+  (`env(safe-area-inset-bottom)`), full-width 44px buttons, and a scrollable body.
+- It uses `role="dialog"`, so DSHgo's mobile stylesheet
+  (`[data-dsh-dialog]`) also caps width/height and keeps it inside the viewport.
+- The delete request is a plain same-origin `POST`, which DSHgo's proxy forwards
+  like any other `/api` call. It is not retried (only GET/HEAD are), so a tap
+  can never delete twice.
 
 ## Docker deployments
 
@@ -155,6 +185,8 @@ command above.)
 - Deleting a Session that no longer exists is treated as success (idempotent).
 - All text is localized (`zh` / `en`); styling uses only `--dsw-*` theme tokens
   and follows light/dark themes.
+- The menu row is the last item on both menu implementations (slot `500` on
+  DSH 0.2.1 and older, context-menu `700` on 0.2.2+).
 
 ## Troubleshooting
 
@@ -182,7 +214,7 @@ plugin_manager action=remove_bundle target=dsh-session-delete
 | `locale/*.json` | Plugin display metadata (title / description). |
 | `icon.svg` | Plugin icon. |
 | `docs/deletion-rules.zh-CN.md` | The exact Host deletion rules and directory layout, for review. |
-| `dist/dsh-session-delete-1.0.0.tgz` | Packaged, installable release artifact (+ `.sha256`). |
+| `dist/dsh-session-delete-1.1.0.tgz` | Packaged, installable release artifact (+ `.sha256`). |
 | `CHANGELOG.md` | Release notes. |
 
 ## License

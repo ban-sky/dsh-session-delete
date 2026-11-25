@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.1.0 — 2026-11-25
+
+DSH 0.2.2 compatibility and DSHgo / mobile WebView polish.
+
+### Added
+
+- Native Session context-menu action for DSH **0.2.2+**:
+  `ctx.contextMenus.register({ id: 'session-delete.delete', target: 'session',
+  order: 700, danger: true })`, rendered after rename / fork / copy id /
+  archive (600) with the shipped menu styling and a registered
+  `contextMenu.icon` entry (`session-delete.trash`).
+- Version detection through the `contextMenus` service: the legacy
+  `sidebar.workspaces.session.menu.item` row (order 500) stays for DSH 0.2.1
+  and is withdrawn automatically once `contextMenus` is available, so the
+  action never appears twice.
+- Narrow-screen dialog (≤ 759px): bottom-sheet layout, `env(safe-area-inset-*)`
+  padding, 44px full-width buttons, scrollable body, `100dvh` sizing with a
+  `vh` fallback, and `role="dialog"` so DSHgo’s mobile stylesheet applies.
+
+### Changed
+
+- README documents the two menu implementations, DSHgo behavior, and the
+  compatibility matrix; `INSTALL.zh-CN.md` gained a DSHgo section.
+- Verified against DSH `0.2.2-rc.5` contracts: `/api` exact fetch route,
+  JSONL persistence (`stat` / `findLog` / `locate` / writer tracking),
+  `workspaceRegistry.archiveSession`, `SessionStore.detachEntered`, and
+  `uiWorkspace.archiveSession` are unchanged.
+
 ## 1.0.0 — 2026-11-10
 
 First official release.

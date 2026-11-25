@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-delete",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Permanently delete a Session from the Session \"...\" menu in the DSH Web UI.",
   "type": "module",

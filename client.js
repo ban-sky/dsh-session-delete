@@ -20,6 +20,12 @@ window.__ModuleLoader__.load({
     const ROUTE = 'api/session-delete'
     const MENU_SLOT = 'sidebar.workspaces.session.menu.item'
     const OVERLAY_SLOT = 'shell.overlay'
+    /** DSH >= 0.2.2 renders Session "..." rows from the context-menu registry. */
+    const CONTEXT_ICON_SLOT = 'contextMenu.icon'
+    const ICON_KEY = 'session-delete.trash'
+    const NATIVE_MENU_ID = 'session-delete.delete'
+    /** After rename (200) / fork (300) / copy id (450) / archive (600). */
+    const NATIVE_MENU_ORDER = 700
 
     const zh = {
       'menu.deleteSession': '删除会话',
@@ -153,19 +159,30 @@ window.__ModuleLoader__.load({
 .dsd-button-outline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}
 .dsd-button-danger{color:var(--dsw-alias-state-error-primary)}
 .dsd-button-danger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover-danger,var(--dsw-alias-interactive-bg-hover))}
+@media (max-width:759px){
+.dsd-overlay{padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));align-items:flex-end}
+.dsd-dialog{width:100%;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px - env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dsd-header{padding:18px 12px 0 18px}
+.dsd-description{padding:0 18px}
+.dsd-error{padding:0 18px}
+.dsd-footer{flex-direction:column;gap:8px;padding:0 18px 4px}
+.dsd-footer .dsd-button{width:100%;height:44px;font-size:16px}
+.dsd-close{width:36px;height:36px}
+.dsd-menu-item{min-height:44px;font-size:15px}
+}
 `
 
     // ---------------------------------------------------------------------
     // Icons (14px, stroke uses currentColor).
     // ---------------------------------------------------------------------
 
-    const TrashIcon = () =>
+    const TrashIcon = ({ size = 14 } = {}) =>
       h(
         'svg',
         {
           viewBox: '0 0 16 16',
-          width: 14,
-          height: 14,
+          width: size,
+          height: size,
           fill: 'none',
           stroke: 'currentColor',
           strokeWidth: 1,
@@ -399,12 +416,68 @@ window.__ModuleLoader__.load({
         )
       }
 
-      ctx.slots.inject(MENU_SLOT, () =>
+      // DSH >= 0.2.2 renders Session "..." rows from the context-menu registry
+      // instead of the slot. Register a native action there and withdraw the
+      // legacy slot row as soon as that registry becomes available, so the
+      // action never appears twice on one menu.
+      const t = ctx.locale.bind(NS)
+
+      const registerNativeMenu = (child) => {
+        const slots = child.get('slots')
+        const contextMenus = child.get('contextMenus')
+        if (slots === undefined || contextMenus === undefined) return
+        child.effect(
+          () =>
+            slots.inject(CONTEXT_ICON_SLOT, function* () {
+              yield slots.register({ name: CONTEXT_ICON_SLOT, key: ICON_KEY }, TrashIcon)
+            }),
+          'session-delete: menu icon',
+        )
+        child.effect(
+          () =>
+            contextMenus.register({
+              id: NATIVE_MENU_ID,
+              target: 'session',
+              order: NATIVE_MENU_ORDER,
+              resolve: (target) => [
+                {
+                  id: 'delete',
+                  label: t('menu.deleteSession'),
+                  icon: { key: ICON_KEY },
+                  danger: true,
+                  separatorBefore: true,
+                  afterContent: true,
+                  run: () =>
+                    openConfirm({
+                      sessionId: target.sessionId,
+                      displayTitle: target.displayTitle,
+                    }),
+                },
+              ],
+            }),
+          'session-delete: session menu action',
+        )
+      }
+
+      const disposeFallbackRow = ctx.slots.inject(MENU_SLOT, () =>
         ctx.slots.register(
           { name: MENU_SLOT, id: 'session-delete', order: 500, locale: NS },
           DeleteSessionMenuItem,
         ),
       )
+
+      let fallbackRowWithdrawn = false
+      const withdrawFallbackRow = () => {
+        if (fallbackRowWithdrawn) return
+        fallbackRowWithdrawn = true
+        disposeFallbackRow?.()
+      }
+
+      // On 0.2.1 this service never appears and the legacy slot row stays.
+      ctx.inject(['contextMenus'], (child) => {
+        withdrawFallbackRow()
+        registerNativeMenu(child)
+      })
 
       ctx.slots.inject(OVERLAY_SLOT, () =>
         ctx.slots.register(

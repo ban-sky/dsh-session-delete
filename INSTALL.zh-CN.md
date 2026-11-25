@@ -4,7 +4,8 @@
 
 ## 适用环境
 
-- DSH ≥ 0.2.1（在 0.2.1-rc.5 上测试通过），Node.js ≥ 20。
+- DSH ≥ 0.2.1（0.2.1-rc.5 与 0.2.2-rc.5 兼容），Node.js ≥ 20。
+- 兼容两种菜单实现：DSH 0.2.2+ 用原生会话右键菜单项（排在“归档”之后、红色），0.2.1 用旧的菜单插槽行；插件会自动识别，不会重复出现。
 - 本机、Docker 部署都可以：插件装在 DSH profile 里，客户端通过 `api/session-delete`（相对地址）访问 Host，不需要额外配置端口或反向代理。
 - 不需要额外依赖，tarball 可以离线安装。
 
@@ -12,16 +13,16 @@
 
 插件源码与发布页：<https://github.com/ban-sky/dsh-session-delete>
 
-1. 把 `dsh-session-delete-1.0.0.tgz` 拷贝到目标设备上一个**固定位置**，例如：
+1. 把 `dsh-session-delete-1.1.0.tgz` 拷贝到目标设备上一个**固定位置**，例如：
 
    ```
-   /data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+   /data/dsh/plugins/dsh-session-delete-1.1.0.tgz
    ```
 
    也可以直接下载：
 
    ```
-   https://github.com/ban-sky/dsh-session-delete/raw/main/dist/dsh-session-delete-1.0.0.tgz
+   https://github.com/ban-sky/dsh-session-delete/raw/main/dist/dsh-session-delete-1.1.0.tgz
    ```
 
    并用同目录下的 `.sha256` 文件校验。
@@ -31,18 +32,28 @@
 2. 在目标设备上安装（二选一）：
 
    ```bash
-   dsh plugin --profile web add /data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+   dsh plugin --profile web add /data/dsh/plugins/dsh-session-delete-1.1.0.tgz
    ```
 
    或者在该设备的 DSH agent 里执行：
 
    ```
-   plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+   plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.1.0.tgz
    ```
 
    安装结果里出现 `application: "restart-required"` 是正常的。
 
 3. 重启一次 DSH Web 进程，然后刷新页面。会话“…”菜单的最后一行就是红色的 **删除会话**。
+
+## 在 DSHgo（手机 App）里使用
+
+DSHgo 只是用 Android WebView 显示同一个 DSH Web UI，**不需要在手机上装任何东西**：
+
+1. 在 DSHgo 连接的 PC 端 DSH 上按本文安装并重启。
+2. 在手机 App 里刷新页面，打开会话“…”菜单即可看到红色“删除会话”。
+3. 窄屏下确认框会自动变成底部弹层：全宽按钮、留出 iPhone 底部安全区、内容可滚动。
+
+删除请求和普通 `api/*` 请求一样经过 DSHgo 的代理转发；它只用 POST，不会被 DSHgo 的读请求重试机制重复执行。
 
 ## 从 GitHub 仓库安装（clone 方式）
 
@@ -59,14 +70,14 @@ profile 里已经装了旧版时，直接安装会报 `already-installed`。先�
 
 ```bash
 dsh plugin --profile web remove dsh-session-delete
-dsh plugin --profile web add /data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+dsh plugin --profile web add /data/dsh/plugins/dsh-session-delete-1.1.0.tgz
 ```
 
 或在 agent 中：
 
 ```
 plugin_manager action=remove_bundle target=dsh-session-delete
-plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.0.0.tgz
+plugin_manager action=install_bundle target=/data/dsh/plugins/dsh-session-delete-1.1.0.tgz
 ```
 
 ## 卸载
